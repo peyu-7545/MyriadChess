@@ -56,7 +56,7 @@ class Coord {
 const coord_to_tile = new ObjectKeyMap<Coord, NormalTile>(key => key.toString());
 
 function getTile(coord: Coord) {
-    return coord_to_tile.get(coord);
+    return coord_to_tile.has(coord) ? coord_to_tile.get(coord)! : null;
 }
 
 [
@@ -97,9 +97,10 @@ canvas.addEventListener('mousedown', e => {
 
     selected = new Coord(x, y);
 
-    console.log(x, y, getTile(new Coord(x, y)));
-});
+    // console.log(x, y, getTile(new Coord(x, y)));
 
+    console.log(reachableTiles_rook(selected));
+});
 
 function render() {
 
@@ -125,3 +126,35 @@ function render() {
 window.addEventListener('load', () => {
     requestAnimationFrame(render);
 });
+
+// getTileで座標から駒の情報を得られる
+
+// 場外判定
+function isOutside(coord: Coord) {
+    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
+}
+
+function isInside(coord: Coord) {
+    return !isOutside(coord);
+}
+
+function reachableTiles_rook(coord: Coord) {
+
+    const reachable: Coord[] = [];
+
+    for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
+
+        const current = structuredClone(coord);
+
+        while (true) {
+            current.x += dx;
+            current.y += dy;
+
+            if (isOutside(current) || getTile(current) !== null) break;
+
+            reachable.push(structuredClone(current));
+        }
+    }
+
+    return reachable;
+}

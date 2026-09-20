@@ -46,7 +46,7 @@ class Coord {
 ;
 const coord_to_tile = new ObjectKeyMap(key => key.toString());
 function getTile(coord) {
-    return coord_to_tile.get(coord);
+    return coord_to_tile.has(coord) ? coord_to_tile.get(coord) : null;
 }
 [
     ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
@@ -78,7 +78,8 @@ canvas.addEventListener('mousedown', e => {
         return;
     }
     selected = new Coord(x, y);
-    console.log(x, y, getTile(new Coord(x, y)));
+    // console.log(x, y, getTile(new Coord(x, y)));
+    console.log(reachableTiles_rook(selected));
 });
 function render() {
     // 背景
@@ -99,4 +100,26 @@ function render() {
 window.addEventListener('load', () => {
     requestAnimationFrame(render);
 });
+// getTileで座標から駒の情報を得られる
+// 場外判定
+function isOutside(coord) {
+    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
+}
+function isInside(coord) {
+    return !isOutside(coord);
+}
+function reachableTiles_rook(coord) {
+    const reachable = [];
+    for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]]) {
+        const current = structuredClone(coord);
+        while (true) {
+            current.x += dx;
+            current.y += dy;
+            if (isOutside(current) || getTile(current) !== null)
+                break;
+            reachable.push(structuredClone(current));
+        }
+    }
+    return reachable;
+}
 //# sourceMappingURL=main.js.map
