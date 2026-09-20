@@ -1,24 +1,24 @@
-export class ObjectKeyMap<Key_t, Val_t> extends Map {
+export class ObjectKeyMap<Key_t, Val_t> extends Map<unknown, Val_t> {
     #serializer;
 
-    constructor(serializer: (obj: Key_t) => string) {
+    constructor(serializer: (obj: Key_t) => unknown) {
         super();
         this.#serializer = serializer;
     }
 
-    set(key: Key_t, value: Val_t) {
+    override set(key: Key_t, value: Val_t) {
         return super.set(this.#serializer(key), value);
     }
 
-    get(key: Key_t) {
+    override get(key: Key_t) {
         return super.get(this.#serializer(key));
     }
 
-    has(key: Key_t) {
+    override has(key: Key_t) {
         return super.has(this.#serializer(key));
     }
 
-    delete(key: Key_t) {
+    override delete(key: Key_t) {
         return super.delete(this.#serializer(key));
     }
 }
