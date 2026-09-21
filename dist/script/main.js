@@ -32,6 +32,29 @@ class NormalPiece extends Piece {
         ctx.fillText(this.symbolText, 20 + 45 / 2 + 45 * this.tile.place.x, 400 - (20 + 45 / 2 + 45 * this.tile.place.y));
     }
 }
+function createPiece(opt) {
+}
+function createPieceType() {
+    return class extends NormalPiece {
+        constructor(symbolText) {
+            super(symbolText);
+        }
+        reachable() {
+            const reachable = [];
+            for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]]) {
+                const current = structuredClone(this.tile.place);
+                while (true) {
+                    current.x += dx;
+                    current.y += dy;
+                    if (isOutside(current) || getTile(current) !== null)
+                        break;
+                    reachable.push(structuredClone(current));
+                }
+            }
+            return reachable;
+        }
+    };
+}
 class Coord {
     x;
     y;
@@ -65,7 +88,7 @@ function getTile(coord) {
         coord_to_tile.set(coord, tile);
         if (piece === '＿')
             return;
-        const p = new NormalPiece(piece);
+        const p = new (createPieceType())(piece);
         tile.piece = p;
         p.tile = tile;
     });
@@ -79,7 +102,9 @@ canvas.addEventListener('mousedown', e => {
     }
     selected = new Coord(x, y);
     // console.log(x, y, getTile(new Coord(x, y)));
-    console.log(reachableTiles_rook(selected));
+    if (getTile(selected) !== null) {
+        console.log(getTile(selected)?.piece?.reachable());
+    }
 });
 function render() {
     // 背景
@@ -107,19 +132,5 @@ function isOutside(coord) {
 }
 function isInside(coord) {
     return !isOutside(coord);
-}
-function reachableTiles_rook(coord) {
-    const reachable = [];
-    for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]]) {
-        const current = structuredClone(coord);
-        while (true) {
-            current.x += dx;
-            current.y += dy;
-            if (isOutside(current) || getTile(current) !== null)
-                break;
-            reachable.push(structuredClone(current));
-        }
-    }
-    return reachable;
 }
 //# sourceMappingURL=main.js.map

@@ -21,8 +21,8 @@ class NormalTile extends Tile<Coord, NormalPiece> {
     }
 };
 
-class NormalPiece extends Piece<Coord, NormalTile> {
-    symbolText;
+abstract class NormalPiece extends Piece<Coord, NormalTile> {
+    symbolText: string;
 
     constructor(symbolText: string) {
         super();
@@ -36,6 +36,42 @@ class NormalPiece extends Piece<Coord, NormalTile> {
         ctx.font = '45px sans-serif';
         ctx.fillStyle = '#1cb019';
         ctx.fillText(this.symbolText, 20 + 45 / 2 + 45 * this.tile.place.x, 400 - (20 + 45 / 2 + 45 * this.tile.place.y));
+    }
+}
+
+type PieceOption<Coord_t> = {
+    reachable: () => Coord_t[];
+};
+
+function createPiece<Coord_t>(opt: PieceOption<Coord_t>) {
+    
+}
+
+function createPieceType() {
+    return class extends NormalPiece {
+        constructor(symbolText: string) {
+            super(symbolText);
+        }
+
+        reachable() {
+            const reachable: Coord[] = [];
+
+            for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
+
+                const current = structuredClone(this.tile!.place);
+
+                while (true) {
+                    current.x += dx;
+                    current.y += dy;
+
+                    if (isOutside(current) || getTile(current) !== null) break;
+
+                    reachable.push(structuredClone(current));
+                }
+            }
+
+            return reachable;
+        }
     }
 }
 
@@ -78,7 +114,7 @@ function getTile(coord: Coord) {
 
         if (piece === '＿') return;
 
-        const p = new NormalPiece(piece);
+        const p = new (createPieceType())(piece);
         tile.piece = p;
         p.tile = tile;
     });
@@ -99,7 +135,9 @@ canvas.addEventListener('mousedown', e => {
 
     // console.log(x, y, getTile(new Coord(x, y)));
 
-    console.log(reachableTiles_rook(selected));
+    if (getTile(selected) !== null) {
+        console.log(getTile(selected)?.piece?.reachable());
+    }
 });
 
 function render() {
@@ -136,25 +174,4 @@ function isOutside(coord: Coord) {
 
 function isInside(coord: Coord) {
     return !isOutside(coord);
-}
-
-function reachableTiles_rook(coord: Coord) {
-
-    const reachable: Coord[] = [];
-
-    for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
-
-        const current = structuredClone(coord);
-
-        while (true) {
-            current.x += dx;
-            current.y += dy;
-
-            if (isOutside(current) || getTile(current) !== null) break;
-
-            reachable.push(structuredClone(current));
-        }
-    }
-
-    return reachable;
 }
