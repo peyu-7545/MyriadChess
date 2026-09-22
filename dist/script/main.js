@@ -1,11 +1,39 @@
 import { Tile, Piece } from './base.js';
 import { ObjectKeyMap } from './util.js';
+/* ------------- Global Variables ------------- */
 const canvas = document.getElementById('canvas');
 canvas.width = 400;
 canvas.height = 400;
 const ctx = canvas.getContext('2d');
+const coord_to_tile = new ObjectKeyMap(key => key.toString());
+let selected = null;
+const focus = [];
+/* ------------- Utility Functions ------------- */
+function getTile(coord) {
+    return coord_to_tile.get(coord);
+}
+function isOutside(coord) {
+    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
+}
+/* ------------- Coordinate Class ------------- */
+class Coord {
+    x;
+    y;
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    toString() {
+        return `${this.x} ${this.y}`;
+    }
+    clone() {
+        return new Coord(this.x, this.y);
+    }
+}
+;
+/* ------------- Tile/Piece Class ------------- */
 class NormalTile extends Tile {
-    color; // 色
+    color;
     constructor(place, color) {
         super(place);
         this.color = color;
@@ -32,119 +60,95 @@ class NormalPiece extends Piece {
         ctx.fillText(this.symbolText, 20 + 45 / 2 + 45 * this.tile.place.x, 400 - (20 + 45 / 2 + 45 * this.tile.place.y));
     }
 }
+/* ------------- Pieces ------------- */
 class Rook extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]]) {
             const current = this.tile.place.clone();
             while (true) {
                 current.x += dx;
                 current.y += dy;
-                if (isOutside(current) || getTile(current)?.piece)
+                if (isOutside(current) || getTile(current).piece)
                     break;
-                reachable.push(current.clone());
+                result.push(current.clone());
             }
         }
-        return reachable;
+        return result;
     }
 }
 class Bishop extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const current = this.tile.place.clone();
             while (true) {
                 current.x += dx;
                 current.y += dy;
-                if (isOutside(current) || getTile(current)?.piece)
+                if (isOutside(current) || getTile(current).piece)
                     break;
-                reachable.push(current.clone());
+                result.push(current.clone());
             }
         }
-        return reachable;
+        return result;
     }
 }
 class Porn extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         const current = this.tile.place.clone();
         current.y += 1;
-        if (!(isOutside(current) || getTile(current)?.piece)) {
-            reachable.push(current.clone());
+        if (!(isOutside(current) || getTile(current).piece)) {
+            result.push(current.clone());
         }
-        return reachable;
+        return result;
     }
 }
 class Knight extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]]) {
             for (const n of [1, -1]) {
                 const current = this.tile.place.clone();
                 current.x += 2 * dx + n * dy;
                 current.y += 2 * dy + n * dx;
-                if (isOutside(current) || getTile(current)?.piece)
+                if (isOutside(current) || getTile(current).piece)
                     continue;
-                reachable.push(current.clone());
+                result.push(current.clone());
             }
         }
-        return reachable;
+        return result;
     }
 }
 class Queen extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const current = this.tile.place.clone();
             while (true) {
                 current.x += dx;
                 current.y += dy;
-                if (isOutside(current) || getTile(current)?.piece)
+                if (isOutside(current) || getTile(current).piece)
                     break;
-                reachable.push(current.clone());
+                result.push(current.clone());
             }
         }
-        return reachable;
+        return result;
     }
 }
 class King extends NormalPiece {
     reachable() {
-        const reachable = [];
+        const result = [];
         for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
             const current = this.tile.place.clone();
             current.x += dx;
             current.y += dy;
-            if (isOutside(current) || getTile(current)?.piece)
+            if (isOutside(current) || getTile(current).piece)
                 continue;
-            reachable.push(current.clone());
+            result.push(current.clone());
         }
-        return reachable;
+        return result;
     }
-}
-class Coord {
-    x;
-    y;
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    toString() {
-        return `${this.x} ${this.y}`;
-    }
-    clone() {
-        return new Coord(this.x, this.y);
-    }
-}
-;
-/// 座標からタイルへの写像
-const coord_to_tile = new ObjectKeyMap(key => key.toString());
-let selected = null;
-const focus = [];
-function getTile(coord) {
-    return coord_to_tile.get(coord) ?? null;
-}
-function isOutside(coord) {
-    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
 }
 const initialBoard = [
     ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
@@ -194,20 +198,36 @@ initialBoard.reverse().forEach((line, y) => {
         p.tile = tile;
     });
 });
-canvas.addEventListener('mousedown', e => {
+/* ------------- set event ------------- */
+canvas.addEventListener('pointerdown', e => {
     let x = Math.floor((e.offsetX - 20) / 45);
     let y = Math.floor((400 - e.offsetY - 20) / 45);
     if (x < 0 || 8 <= x || y < 0 || 8 <= y) {
         return;
     }
-    selected = new Coord(x, y);
-    const tile = getTile(selected);
-    if (tile?.piece) {
-        const reachable = tile.piece.reachable();
+    const pointerPosition = new Coord(x, y);
+    console.log("pointer: ", pointerPosition);
+    if (selected) {
+        // 既に動く駒が選択されているとき
+        // このポインタが駒が移動できるタイルにあるならそこへ移動する
+        // でなければ何もしない
+        if (focus.map(e => e.toString()).includes(new Coord(x, y).toString())) {
+            console.log("move: " + selected + " -> " + pointerPosition);
+        }
+        selected = null;
         focus.length = 0;
-        reachable.forEach(e => focus.push(e));
+    }
+    else {
+        // 選択されていないとき、このポインタの位置にある駒を選択する
+        const tile = getTile(pointerPosition);
+        if (tile.piece) {
+            focus.length = 0;
+            tile.piece.reachable().forEach(e => focus.push(e));
+            selected = pointerPosition;
+        }
     }
 });
+/* ------------- rendering ------------- */
 function render() {
     // 背景
     ctx.fillStyle = '#312f2f';
@@ -222,9 +242,9 @@ function render() {
         ctx.strokeStyle = '#10b1bd';
         ctx.strokeRect(20 + 45 * selected.x, 400 - (20 + 45 * selected.y), 45, -45);
     }
-    focus.forEach(f => {
+    focus.forEach(e => {
         ctx.fillStyle = "#c0b32150";
-        ctx.fillRect(20 + 45 * f.x, 400 - (20 + 45 * f.y), 45, -45);
+        ctx.fillRect(20 + 45 * e.x, 400 - (20 + 45 * e.y), 45, -45);
     });
     requestAnimationFrame(render);
 }

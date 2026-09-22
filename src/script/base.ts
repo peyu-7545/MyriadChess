@@ -1,5 +1,5 @@
 export class Tile<Coord_t, Piece_t> {
-    place: Coord_t; // 座標
+    readonly place: Coord_t; // 座標
     piece: Piece_t | null = null; // 駒
 
     constructor(place: Coord_t) {
