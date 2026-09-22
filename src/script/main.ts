@@ -22,9 +22,9 @@ class NormalTile extends Tile<Coord, NormalPiece> {
 };
 
 abstract class NormalPiece extends Piece<Coord, NormalTile> {
-    symbolText: string;
+    symbolText: piece_symbol
 
-    constructor(symbolText: string) {
+    constructor(symbolText: piece_symbol) {
         super();
         this.symbolText = symbolText;
     }
@@ -39,39 +39,125 @@ abstract class NormalPiece extends Piece<Coord, NormalTile> {
     }
 }
 
-type PieceOption<Coord_t> = {
-    reachable: () => Coord_t[];
-};
+class Rook extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
 
-function createPiece<Coord_t>(opt: PieceOption<Coord_t>) {
-    
+        for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
+
+            const current = this.tile!.place.clone();
+
+            while (true) {
+                current.x += dx;
+                current.y += dy;
+
+                if (isOutside(current) || getTile(current)?.piece) break;
+
+                reachable.push(current.clone());
+            }
+        }
+
+        return reachable;
+    }
 }
 
-function createPieceType() {
-    return class extends NormalPiece {
-        constructor(symbolText: string) {
-            super(symbolText);
-        }
+class Bishop extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
 
-        reachable() {
-            const reachable: Coord[] = [];
+        for (const [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+            
+            const current = this.tile!.place.clone();
 
-            for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
+            while (true) {
+                current.x += dx;
+                current.y += dy;
 
-                const current = structuredClone(this.tile!.place);
+                if (isOutside(current) || getTile(current)?.piece) break;
 
-                while (true) {
-                    current.x += dx;
-                    current.y += dy;
-
-                    if (isOutside(current) || getTile(current) !== null) break;
-
-                    reachable.push(structuredClone(current));
-                }
+                reachable.push(current.clone());
             }
-
-            return reachable;
         }
+
+        return reachable;
+    }
+}
+
+class Porn extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
+
+        const current = this.tile!.place.clone();
+        current.y += 1;
+
+        if (!(isOutside(current) || getTile(current)?.piece)) {
+            reachable.push(current.clone());
+        }
+
+        return reachable;
+    }
+}
+
+class Knight extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
+
+        for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1]] as const) {
+            for (const n of [1, -1] as const) {
+                const current = this.tile!.place.clone();
+
+                current.x += 2 * dx + n * dy;
+                current.y += 2 * dy + n * dx;
+
+                if (isOutside(current) || getTile(current)?.piece) continue;
+
+                reachable.push(current.clone());
+            }
+        }
+
+        return reachable;
+    }
+}
+
+class Queen extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
+
+        for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+
+            const current = this.tile!.place.clone();
+
+            while (true) {
+                current.x += dx;
+                current.y += dy;
+
+                if (isOutside(current) || getTile(current)?.piece) break;
+
+                reachable.push(current.clone());
+            }
+        }
+
+        return reachable;
+    }
+}
+
+class King extends NormalPiece {
+    override reachable(): Coord[] {
+        const reachable: Coord[] = [];
+
+        for (const [dx, dy] of [[1, 0], [0, -1], [-1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+
+            const current = this.tile!.place.clone();
+
+            current.x += dx;
+            current.y += dy;
+
+            if (isOutside(current) || getTile(current)?.piece) continue;
+
+            reachable.push(current.clone());
+        }
+
+        return reachable;
     }
 }
 
@@ -87,15 +173,32 @@ class Coord {
     toString() {
         return `${this.x} ${this.y}`;
     }
+
+    clone() {
+        return new Coord(this.x, this.y);
+    }
 };
 
+/// 座標からタイルへの写像
 const coord_to_tile = new ObjectKeyMap<Coord, NormalTile>(key => key.toString());
 
+let selected: Coord | null = null;
+
+const focus: Coord[] = [];
+
 function getTile(coord: Coord) {
-    return coord_to_tile.has(coord) ? coord_to_tile.get(coord)! : null;
+    return coord_to_tile.get(coord) ?? null;
 }
 
-[
+function isOutside(coord: Coord) {
+    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
+}
+
+type piece_symbol = '♜' | '♞' | '♝' | '♛' | '♚' | '♟' | 
+                    '♖' | '♘' | '♗' | '♕' | '♔' | '♙' |
+                    '＿' ;
+
+const initialBoard: piece_symbol[][] = [
     ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
     ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
     ['＿', '＿', '＿', '＿', '＿', '＿', '＿', '＿'],
@@ -103,8 +206,10 @@ function getTile(coord: Coord) {
     ['＿', '＿', '＿', '＿', '＿', '＿', '＿', '＿'],
     ['＿', '＿', '＿', '＿', '＿', '＿', '＿', '＿'],
     ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
-    ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
-].reverse().forEach((line, y) => {
+    ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖'],
+];
+
+initialBoard.reverse().forEach((line, y) => {
     line.forEach((piece, x) => {
         const coord = new Coord(x, y);
         const tileColor = (x + y) % 2 === 0 ? '#312f2f' : '#e9d8d8';
@@ -112,15 +217,22 @@ function getTile(coord: Coord) {
 
         coord_to_tile.set(coord, tile);
 
-        if (piece === '＿') return;
+        let p: NormalPiece;
 
-        const p = new (createPieceType())(piece);
+        switch(piece) {
+            case '♜': case '♖': p = new Rook(piece); break;
+            case '♝': case '♗': p = new Bishop(piece); break;
+            case '♟': case '♙': p = new Porn(piece); break;
+            case '♞': case '♘': p = new Knight(piece); break;
+            case '♛': case '♕': p = new Queen(piece); break;
+            case '♚': case '♔': p = new King(piece); break;
+            default: return;
+        }
+
         tile.piece = p;
         p.tile = tile;
     });
 });
-
-let selected: Coord | null = null;
 
 canvas.addEventListener('mousedown', e => {
 
@@ -133,21 +245,23 @@ canvas.addEventListener('mousedown', e => {
 
     selected = new Coord(x, y);
 
-    // console.log(x, y, getTile(new Coord(x, y)));
+    const tile = getTile(selected);
 
-    if (getTile(selected) !== null) {
-        console.log(getTile(selected)?.piece?.reachable());
+    if (tile?.piece) {
+        const reachable = tile.piece.reachable();
+        focus.length = 0;
+        reachable.forEach(e => focus.push(e));
     }
 });
 
 function render() {
 
     // 背景
-    ctx.fillStyle = '#0c0e4e';
+    ctx.fillStyle = '#312f2f';
     ctx.fillRect(0, 0, 400, 400);
 
     // タイルと駒
-    coord_to_tile.forEach((tile, coord) => {
+    coord_to_tile.forEach((tile) => {
         tile.render();
         tile.piece?.render();
     });
@@ -158,20 +272,14 @@ function render() {
         ctx.strokeRect(20 + 45 * selected.x, 400 - (20 + 45 * selected.y), 45, -45);
     }
 
+    focus.forEach(f => {
+        ctx.fillStyle = "#c0b32150";
+        ctx.fillRect(20 + 45 * f.x, 400 - (20 + 45 * f.y), 45, -45);
+    });
+
     requestAnimationFrame(render);
 }
 
 window.addEventListener('load', () => {
     requestAnimationFrame(render);
 });
-
-// getTileで座標から駒の情報を得られる
-
-// 場外判定
-function isOutside(coord: Coord) {
-    return coord.x < 0 || 8 <= coord.x || coord.y < 0 || 8 <= coord.y;
-}
-
-function isInside(coord: Coord) {
-    return !isOutside(coord);
-}

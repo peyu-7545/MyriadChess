@@ -9,7 +9,7 @@ export class ObjectKeyMap<Key_t, Val_t> extends Map<unknown, Val_t> {
     override set(key: Key_t, value: Val_t) {
         return super.set(this.#serializer(key), value);
     }
-
+    
     override get(key: Key_t) {
         return super.get(this.#serializer(key));
     }

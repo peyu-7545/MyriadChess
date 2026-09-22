@@ -1,4 +1,4 @@
-export class Tile<Coord_t extends { toString(): string }, Piece_t> {
+export class Tile<Coord_t, Piece_t> {
     place: Coord_t; // 座標
     piece: Piece_t | null = null; // 駒
 
@@ -7,8 +7,8 @@ export class Tile<Coord_t extends { toString(): string }, Piece_t> {
     }
 };
 
-export abstract class Piece<Coord_t extends { toString(): string }, Tile_t> {
+export abstract class Piece<Coord_t, Tile_t> {
     tile: Tile_t | null = null; // 置かれているタイル
 
-    abstract reachable(): Coord_t[]
+    abstract reachable(): Coord_t[];
 };
